@@ -43,30 +43,30 @@ class _HomePageState extends State<HomePage> {
               color: Colors.black,
             ),
           ),
-          const NavigationDestination(
-            icon: Icon(
-              Icons.shield_outlined,
+          NavigationDestination(
+            icon: Image.asset(
+              'assets/league.png',
+              height: 20,
               color: Colors.black26,
-              size: 20,
             ),
             label: 'League',
-            selectedIcon: Icon(
-              Icons.shield_outlined,
+            selectedIcon: Image.asset(
+              'assets/league.png',
+              height: 20,
               color: Colors.black,
-              size: 20,
             ),
           ),
-          const NavigationDestination(
-            icon: Icon(
-              Icons.favorite_outline_rounded,
+          NavigationDestination(
+            icon: Image.asset(
+              'assets/favorite.png',
+              height: 20,
               color: Colors.black26,
-              size: 20,
             ),
             label: 'Favorite',
-            selectedIcon: Icon(
-              Icons.favorite_outline_rounded,
+            selectedIcon: Image.asset(
+              'assets/favorite.png',
+              height: 20,
               color: Colors.black,
-              size: 20,
             ),
           ),
           NavigationDestination(

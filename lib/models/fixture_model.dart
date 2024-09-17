@@ -1,5 +1,6 @@
 class Fixture {
   final int id;
+  final int seasonId;
   final String startingAt;
   final int? length;
   final String? resultInfo;
@@ -11,6 +12,7 @@ class Fixture {
 
   Fixture({
     required this.id,
+    required this.seasonId,
     required this.name,
     required this.startingAt,
     required this.length,
@@ -34,6 +36,7 @@ class Fixture {
     //     eventList.map((eventJson) => Events.fromJson(eventJson)).toList();
     return Fixture(
       id: json['id'],
+      seasonId: json['season_id'],
       name: json['name'],
       startingAt: json['starting_at'],
       league: League.fromJson(json['league']),
@@ -47,7 +50,7 @@ class Fixture {
 
   @override
   String toString() {
-    return 'Fixture{startingAt: $startingAt, league: $league, participants: $participants, scores: $scores}';
+    return 'Fixture{startingAt: $startingAt, league: $league, participants: $participants, scores: $scores, result_info: $resultInfo}';
   }
 }
 

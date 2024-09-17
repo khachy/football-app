@@ -1,12 +1,9 @@
 // ignore_for_file: use_build_context_synchronously, avoid_print
-
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:football_app/constants/constants.dart';
 import 'package:football_app/models/event_model.dart';
@@ -67,7 +64,7 @@ class _OverviewTabState extends State<OverviewTab> {
             (responseDecode['data']['scores'] as List)
                 .map((score) => Scores.fromJson(score as Map<String, dynamic>))
                 .toList();
-        print('Data: $dataList');
+        log('Data: $dataList');
 
         // print('Period: ${responseDecode['data']['periods']}');
 
@@ -404,6 +401,7 @@ class _OverviewTabState extends State<OverviewTab> {
                 }
 
                 return ListView.builder(
+                  padding: EdgeInsets.zero,
                   itemCount: eventWidgets.length,
                   physics: const BouncingScrollPhysics(),
                   itemBuilder: (context, index) {

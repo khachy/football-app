@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:football_app/constants/constants.dart';
@@ -61,9 +62,10 @@ class _MatchInfoTabState extends State<MatchInfoTab> {
             .map((json) => RefereeInfo.fromJson(json as Map<String, dynamic>))
             .toList();
 
+        log('RefList: $refereeList');
+
         for (var referee in refereeList) {
-          int refTypeId = referee.typeId;
-          if (refTypeId == 6) {
+          if (referee.typeId == 6) {
             setState(() {
               mainRefId = referee.refereeId;
             });
@@ -75,11 +77,11 @@ class _MatchInfoTabState extends State<MatchInfoTab> {
     return {};
   }
 
-  Future<Map<String, List<RefereeInfo>>> getReferees(int refereeId) async {
+  Future<Map<String, List<RefereeInfo>>> getReferees(int refId) async {
     try {
       var response = await http.get(
         Uri.parse(
-          'https://api.sportmonks.com/v3/football/referees/$refereeId',
+          '${Constants.baseUrl}/referees/$refId',
         ),
         headers: {
           'Authorization': Constants.apiToken,
@@ -89,7 +91,7 @@ class _MatchInfoTabState extends State<MatchInfoTab> {
       if (response.statusCode == 200) {
         final refereeJson = jsonDecode(response.body);
 
-        print('Ref: $refereeJson');
+        log('Ref: $refereeJson');
 
         // final List<dynamic> venueList = (venueJson['data'] as List)
         //     .map((json) => MatchInfo.fromJson(json as Map<String, dynamic>))

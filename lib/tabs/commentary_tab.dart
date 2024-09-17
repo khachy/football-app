@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -26,7 +27,7 @@ class CommentaryTab extends StatefulWidget {
 
 class _CommentaryTabState extends State<CommentaryTab> {
   late Future<Map<String, List<Comments>>> eventFuture;
-  String? nullComment;
+  String nullComment = '';
 
   int parseMinute(String minuteString, String? extraTime) {
     int mainMinute = int.tryParse(minuteString) ?? 0;
@@ -51,6 +52,8 @@ class _CommentaryTabState extends State<CommentaryTab> {
         final List<dynamic> commentList = (responseDecode['data'] as List)
             .map((json) => Comments.fromJson(json as Map<String, dynamic>))
             .toList();
+
+        log('Comments: $commentList');
 
         Map<String, List<Comments>> commentMap = {};
 
@@ -81,7 +84,7 @@ class _CommentaryTabState extends State<CommentaryTab> {
             return aTotalMinute.compareTo(bTotalMinute);
           });
         }
-        print('Comments: $commentMap');
+        // log('Comments: $commentMap');
         return commentMap;
       }
     } on SocketException {
@@ -283,7 +286,7 @@ class _CommentaryTabState extends State<CommentaryTab> {
                                     horizontal: 9.w,
                                   ),
                                   child: Text(
-                                    nullComment!,
+                                    nullComment,
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,

@@ -9,6 +9,7 @@ import 'package:football_app/models/event_model.dart';
 import 'package:football_app/tabs/commentary_tab.dart';
 import 'package:football_app/tabs/match_info_tab.dart';
 import 'package:football_app/tabs/overview_tab.dart';
+import 'package:football_app/tabs/standings_tab.dart';
 import 'package:http/http.dart' as http;
 
 class MatchDetails extends StatefulWidget {
@@ -551,13 +552,13 @@ class _MatchDetailsState extends State<MatchDetails>
                   fixtureId: widget.fixtureId,
                 );
               case 'Stats':
-              // return StatsTab();
+                return const Center(child: Text('Unknown Tab'));
               case 'Lineups':
-              // return LineupsTab();
+                return const Center(child: Text('Unknown Tab'));
               case 'Standings':
-              // return StandingsTab();
+                return const StandingsTab();
               case 'H2H':
-              // return H2HTab();
+                return const Center(child: Text('Unknown Tab'));
               default:
                 return const Center(child: Text('Unknown Tab'));
             }

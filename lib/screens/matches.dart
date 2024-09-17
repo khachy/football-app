@@ -96,6 +96,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -127,7 +128,7 @@ class _MatchesState extends State<Matches> {
   Map<String, List<String>> leagueFixtureName = {};
   Map<String, List<Fixture>> groupedFixtures = {};
   late bool _isConnected = false;
-  var defaultDate = DateTime.parse('2023-08-13');
+  var defaultDate = DateTime.parse('2024-09-16');
   late Future<Map<String, List<Fixture>>> fixturesFuture;
   late Future<Map<String, List<Fixture>>>? updatedFixturesFuture;
   late StreamSubscription<ConnectivityResult> connectivitySubscription;
@@ -216,7 +217,7 @@ class _MatchesState extends State<Matches> {
       );
       if (response.statusCode == 200) {
         final responseDecode = jsonDecode(response.body);
-        print(responseDecode);
+        log(responseDecode.toString());
         final List<dynamic> fixtures = responseDecode['data']
             .map((fixture) => Fixture.fromJson(fixture as Map<String, dynamic>))
             .toList();
@@ -572,55 +573,73 @@ class _MatchesState extends State<Matches> {
                                               ],
                                             ),
                                             children: uniqueList
-                                                .map((
-                                                  fixture,
-                                                ) {
+                                                .map((fixture) {
                                                   Participants? homeTeam;
                                                   Participants? awayTeam;
-                                                  final isHalfTime =
-                                                      model.isHalfTime[fixture
-                                                              .id
-                                                              .toString()] ??
-                                                          false;
-                                                  String length;
+
+                                                  // Get fixture starting time
                                                   DateTime fixtureStartingAt =
                                                       DateTime.parse(fixture
                                                               .startingAt)
                                                           .toLocal();
+                                                  final DateTime now =
+                                                      DateTime.now();
+                                                  final Duration elapsed =
+                                                      now.difference(
+                                                          fixtureStartingAt);
+                                                  final int elapsedMinutes =
+                                                      elapsed.inMinutes;
+                                                  String length;
 
-                                                  if (fixture.resultInfo ==
-                                                      null) {
-                                                    length = toTime(
-                                                        fixtureStartingAt);
-                                                  } else {
-                                                    length = 'FT';
-                                                    WidgetsBinding.instance
-                                                        .addPostFrameCallback(
-                                                            (_) {
-                                                      Provider.of<TimerModel>(
-                                                              context,
-                                                              listen: false)
-                                                          .stopTimer(fixture.id
-                                                              .toString());
-                                                    });
-                                                  }
-                                                  if (toTime(DateTime.parse(
-                                                          fixture
-                                                              .startingAt)) ==
-                                                      toTime(DateTime.now())) {
-                                                    final timerDuration = model
-                                                        .getDuration(fixture.id
+                                                  // Check if match is full-time, halftime, or running
+                                                  if (elapsedMinutes >= 90) {
+                                                    length = "FT";
+                                                    Provider.of<TimerModel>(
+                                                            context,
+                                                            listen: false)
+                                                        .stopTimer(fixture.id
                                                             .toString());
-                                                    model.startTimer(fixture);
-                                                    // final duration = Duration(minutes: timerDuration.inMinutes);
+                                                  } else if (elapsedMinutes >=
+                                                          45 &&
+                                                      elapsedMinutes < 60) {
+                                                    length = "HT"; // Halftime
+                                                  } else if (elapsedMinutes <
+                                                      45) {
                                                     length =
-                                                        '${timerDuration.inMinutes.toString()}\'';
-
-                                                    // length = '1';
+                                                        "$elapsedMinutes'"; // First half
+                                                    Provider.of<TimerModel>(
+                                                            context,
+                                                            listen: false)
+                                                        .startRealTimeTimer(
+                                                            fixture);
+                                                  } else if (elapsedMinutes >=
+                                                          60 &&
+                                                      elapsedMinutes < 90) {
+                                                    length =
+                                                        "${elapsedMinutes - 15}'"; // Second half accounting for halftime break
+                                                    Provider.of<TimerModel>(
+                                                            context,
+                                                            listen: false)
+                                                        .resumeTimer(fixture.id
+                                                            .toString());
+                                                  } else if (elapsedMinutes >
+                                                      90) {
+                                                    final int extraTimeMinutes =
+                                                        elapsedMinutes - 90;
+                                                    length =
+                                                        "90+${extraTimeMinutes}'"; // Extra time
+                                                  } else {
+                                                    length = 'N/A';
                                                   }
-                                                  if (isHalfTime) {
+
+                                                  // Handle Halftime (HT) if already set
+                                                  if (model.isHalfTime[fixture
+                                                          .id
+                                                          .toString()] ??
+                                                      false) {
                                                     length = 'HT';
                                                   }
+
                                                   final splitName =
                                                       fixture.name.split('vs');
                                                   for (var participant

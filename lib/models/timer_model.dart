@@ -2,100 +2,103 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:football_app/models/fixture_model.dart';
-import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class TimerModel extends ChangeNotifier {
-  List<Fixture> fixtures = [];
-  Map<String, int> timers = {};
-  final Map<String, Timer?> _timers = {};
-  Map<String, bool> isHalfTime = {};
+  Map<String, int> timers = {}; // stores the minutes passed
+  Map<String, Timer?> _timers = {}; // actual timers
+  Map<String, bool> isHalfTime = {}; // track if match is at halftime
   static const halfTimeDuration = Duration(minutes: 45);
   static const halfTimeBreakDuration = Duration(minutes: 15);
 
-  // TimerModel() {
-  //   initializeTimers();
-  // }
+  // Start the timer
+  void startRealTimeTimer(Fixture fixture) {
+    DateTime fixtureStart = DateTime.parse(fixture.startingAt).toLocal();
+    final now = DateTime.now();
+    final elapsed = now.difference(fixtureStart).inMinutes;
 
-  // void initializeTimers() {
-  //   final now = DateTime.now();
-  //   for (var fixture in fixtures) {
-  //     if (toTime(DateTime.parse(fixture.startingAt)) == toTime(now)) {
-  //       startTimer(fixture);
-  //     }
-  //   }
-  //   // notifyListeners();
-  // }
+    // If the match hasn't started, don't start the timer
+    if (elapsed < 0) return;
 
-  void startTimer(Fixture fixture) {
-    _loadDuration(fixture.id.toString()).then((duration) {
-      timers[fixture.id.toString()] = duration;
-      isHalfTime[fixture.id.toString()] = false;
-      _timers[fixture.id.toString()]?.cancel();
-      _timers[fixture.id.toString()] =
-          Timer.periodic(const Duration(minutes: 1), (timer) {
-        _updateTimer(fixture, timer);
-      });
-    });
+    // Adjust elapsed time if the match is at halftime or full-time
+    if (elapsed >= 90) {
+      timers[fixture.id.toString()] = 90; // Full-time
+      stopTimer(fixture.id.toString());
+      notifyListeners();
+      return;
+    } else if (elapsed >= 45 && elapsed < 60) {
+      timers[fixture.id.toString()] = 45; // Halftime
+      notifyListeners();
+      return;
+    } else {
+      timers[fixture.id.toString()] = elapsed; // Normal time
+    }
+
+    isHalfTime[fixture.id.toString()] = false;
+    _timers[fixture.id.toString()]?.cancel(); // cancel any existing timer
+
+    // Start the timer
+    _timers[fixture.id.toString()] = Timer.periodic(
+      const Duration(minutes: 1),
+      (timer) => _updateTimer(fixture.id.toString(), timer),
+    );
   }
 
-  void _updateTimer(Fixture fixture, Timer timer) {
-    if (isHalfTime[fixture.id.toString()]!) return;
-    timers[fixture.id.toString()] = timers[fixture.id.toString()]! + 1;
-    _saveDuration(fixture.id.toString(), timers[fixture.id.toString()]!);
-    notifyListeners();
+  // Method to update the timer each minute
+  void _updateTimer(String id, Timer timer) {
+    timers[id] = timers[id]! + 1;
+    notifyListeners(); // Update UI
 
-    if (timers[fixture.id.toString()]! >= halfTimeDuration.inMinutes &&
-        timers[fixture.id.toString()]! < halfTimeDuration.inMinutes + 1) {
-      _pauseTimerForHalfTime(fixture, timer);
+    // Check for halftime or full-time
+    if (timers[id] == 45) {
+      _pauseTimerForHalfTime(id, timer);
+    } else if (timers[id]! >= 90) {
+      // Full-time reached
+      timer.cancel();
+      _timers.remove(id);
+      notifyListeners();
     }
   }
 
-  void _pauseTimerForHalfTime(Fixture fixture, Timer timer) {
+  // Pause the timer at halftime
+  void _pauseTimerForHalfTime(String id, Timer timer) {
     timer.cancel();
-    _timers.remove(fixture.id.toString());
-    isHalfTime[fixture.id.toString()] = true;
-    notifyListeners();
-
+    isHalfTime[id] = true;
+    notifyListeners(); // Update UI to show HT
     Future.delayed(halfTimeBreakDuration, () {
-      _resumeTimer(fixture);
+      // After 15 minutes of halftime, resume the timer
+      resumeTimer(id);
     });
   }
 
-  void _resumeTimer(Fixture fixture) {
-    _timers[fixture.id.toString()] =
-        Timer.periodic(const Duration(minutes: 1), (timer) {
-      _updateTimer(fixture, timer);
+  // Resume the timer after halftime
+  void resumeTimer(String id) {
+    if (_timers[id] != null) return; // Timer already running
+
+    _timers[id] = Timer.periodic(const Duration(minutes: 1), (timer) {
+      timers[id] = (timers[id]! + 1);
+      notifyListeners();
+
+      // Stop timer when reaching full-time (90+ minutes)
+      if (timers[id]! >= 90) {
+        timer.cancel();
+        _timers.remove(id);
+        notifyListeners();
+      }
     });
+    isHalfTime[id] = false; // Reset halftime flag
   }
 
-  Future<void> _saveDuration(String id, int duration) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('timer_duration_$id', duration);
-  }
-
-  Future<int> _loadDuration(String id) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('timer_duration_$id') ?? 0;
-  }
-
+  // Stop the timer at full-time or when the match ends
   void stopTimer(String id) {
     _timers[id]?.cancel();
     _timers.remove(id);
+    // notifyListeners();
   }
 
+  // Dispose of the timers when no longer needed
   @override
   void dispose() {
     _timers.forEach((id, timer) => timer?.cancel());
     super.dispose();
   }
-
-  Duration getDuration(String id) {
-    int minutes = timers[id] ?? 0;
-    return Duration(minutes: minutes);
-  }
-}
-
-String toTime(DateTime dateTime) {
-  return DateFormat('hh:mm a').format(dateTime.toLocal());
 }
